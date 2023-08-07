@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Viserion",
+  "description": "chrome extension",
+  "version": "1.0.0",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Open Viserion"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
