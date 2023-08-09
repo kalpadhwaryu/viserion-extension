@@ -1,3 +1,26 @@
+import { openDB } from "idb";
+
+async function storeAccessToken(accessToken: string) {
+  try {
+    const db = await openDB("GitHub", 1, {
+      upgrade(db) {
+        if (!db.objectStoreNames.contains("GitHubObjectStore")) {
+          db.createObjectStore("GitHubObjectStore");
+        }
+      },
+    });
+
+    const tx = db.transaction("GitHubObjectStore", "readwrite");
+    const store = tx.objectStore("GitHubObjectStore");
+    await store.put(accessToken, "access_token");
+
+    await tx.done;
+    console.log("Access token stored in IndexDB.");
+  } catch (error) {
+    console.error("Error storing access token:", error);
+  }
+}
+
 async function exchangeAuthorizationCodeForToken(
   authorizationCode: string
 ): Promise<string | null> {
@@ -32,7 +55,7 @@ chrome.webNavigation.onCompleted.addListener(({ tabId, url }) => {
       exchangeAuthorizationCodeForToken(authorizationCode)
         .then((accessToken) => {
           if (accessToken) {
-            // Store the accessToken securely for later use (e.g., using chrome.storage)
+            storeAccessToken(accessToken);
             console.log("Access token obtained:", accessToken);
           }
         })
