@@ -2,16 +2,16 @@ import { openDB } from "idb";
 
 async function storeAccessToken(accessToken: string) {
   try {
-    const db = await openDB("GitHub", 1, {
+    const db = await openDB("GitHubAccessToken", 1, {
       upgrade(db) {
-        if (!db.objectStoreNames.contains("GitHubStore")) {
-          db.createObjectStore("GitHubStore");
+        if (!db.objectStoreNames.contains("AccessTokenStore")) {
+          db.createObjectStore("AccessTokenStore");
         }
       },
     });
 
-    const tx = db.transaction("GitHubStore", "readwrite");
-    const store = tx.objectStore("GitHubStore");
+    const tx = db.transaction("AccessTokenStore", "readwrite");
+    const store = tx.objectStore("AccessTokenStore");
     await store.put(accessToken, "access_token");
 
     await tx.done;
@@ -21,27 +21,27 @@ async function storeAccessToken(accessToken: string) {
   }
 }
 
-async function storeRepos(repos) {
+async function storeGitHubData(databaseName, storeName, data) {
   try {
-    const db = await openDB("GitHub", 1, {
+    const db = await openDB(databaseName, 1, {
       upgrade(db) {
-        if (!db.objectStoreNames.contains("GitHubStore")) {
-          db.createObjectStore("GitHubStore", { keyPath: "id" });
+        if (!db.objectStoreNames.contains(storeName)) {
+          db.createObjectStore(storeName, { keyPath: "id" });
         }
       },
     });
 
-    const tx = db.transaction("GitHubStore", "readwrite");
-    const store = tx.objectStore("GitHubStore");
+    const tx = db.transaction(storeName, "readwrite");
+    const store = tx.objectStore(storeName);
 
-    for (const obj of repos) {
-      await store.put(obj, obj.id);
+    for (const obj of data) {
+      await store.put(obj);
     }
 
     await tx.done;
-    console.log("Repos stored in IndexedDB.");
+    console.log(`${storeName} stored in IndexedDB.`);
   } catch (error) {
-    console.error("Error storing repos in IndexedDB:", error);
+    console.error(`Error storing ${storeName} in IndexedDB:`, error);
   }
 }
 
@@ -60,7 +60,6 @@ async function exchangeAuthorizationCodeForToken(
     );
 
     const data = await response.json();
-    console.log(data);
     return data.access_token;
   } catch (error) {
     console.error("Error exchanging authorization code:", error);
@@ -82,7 +81,6 @@ async function getGitHubReposFollowers(
     });
 
     const data = await response.json();
-    console.log(data);
     return data;
   } catch (error) {
     console.error("Error exchanging authorization code:", error);
@@ -90,12 +88,10 @@ async function getGitHubReposFollowers(
   }
 }
 
-// Handle the callback URL from the AuthApp
 chrome.webNavigation.onCompleted.addListener(({ url }) => {
   if (url.startsWith("http://localhost:8080")) {
     const params = new URLSearchParams(new URL(url).search);
     const authorizationCode = params.get("code");
-    console.log(authorizationCode);
 
     if (authorizationCode) {
       exchangeAuthorizationCodeForToken(authorizationCode)
@@ -103,7 +99,8 @@ chrome.webNavigation.onCompleted.addListener(({ url }) => {
           if (accessToken) {
             storeAccessToken(accessToken);
             getGitHubReposFollowers("repos", accessToken).then((data) => {
-              storeRepos(data);
+              // storeGitHubData("GithHubFollowers", "FollowersStore", data);
+              storeGitHubData("GithHubRepos", "ReposStore", data);
             });
           }
         })
