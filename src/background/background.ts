@@ -4,20 +4,44 @@ async function storeAccessToken(accessToken: string) {
   try {
     const db = await openDB("GitHub", 1, {
       upgrade(db) {
-        if (!db.objectStoreNames.contains("GitHubObjectStore")) {
-          db.createObjectStore("GitHubObjectStore");
+        if (!db.objectStoreNames.contains("GitHubStore")) {
+          db.createObjectStore("GitHubStore");
         }
       },
     });
 
-    const tx = db.transaction("GitHubObjectStore", "readwrite");
-    const store = tx.objectStore("GitHubObjectStore");
+    const tx = db.transaction("GitHubStore", "readwrite");
+    const store = tx.objectStore("GitHubStore");
     await store.put(accessToken, "access_token");
 
     await tx.done;
     console.log("Access token stored in IndexDB.");
   } catch (error) {
     console.error("Error storing access token:", error);
+  }
+}
+
+async function storeRepos(repos) {
+  try {
+    const db = await openDB("GitHub", 1, {
+      upgrade(db) {
+        if (!db.objectStoreNames.contains("GitHubStore")) {
+          db.createObjectStore("GitHubStore", { keyPath: "id" });
+        }
+      },
+    });
+
+    const tx = db.transaction("GitHubStore", "readwrite");
+    const store = tx.objectStore("GitHubStore");
+
+    for (const obj of repos) {
+      await store.put(obj, obj.id);
+    }
+
+    await tx.done;
+    console.log("Repos stored in IndexedDB.");
+  } catch (error) {
+    console.error("Error storing repos in IndexedDB:", error);
   }
 }
 
@@ -44,8 +68,30 @@ async function exchangeAuthorizationCodeForToken(
   }
 }
 
+async function getGitHubReposFollowers(
+  entity: string,
+  accessToken: string
+): Promise<any> {
+  try {
+    const response = await fetch(`http://localhost:8080/github/${entity}`, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        Authorization: "Bearer " + accessToken,
+      },
+    });
+
+    const data = await response.json();
+    console.log(data);
+    return data;
+  } catch (error) {
+    console.error("Error exchanging authorization code:", error);
+    return null;
+  }
+}
+
 // Handle the callback URL from the AuthApp
-chrome.webNavigation.onCompleted.addListener(({ tabId, url }) => {
+chrome.webNavigation.onCompleted.addListener(({ url }) => {
   if (url.startsWith("http://localhost:8080")) {
     const params = new URLSearchParams(new URL(url).search);
     const authorizationCode = params.get("code");
@@ -56,7 +102,9 @@ chrome.webNavigation.onCompleted.addListener(({ tabId, url }) => {
         .then((accessToken) => {
           if (accessToken) {
             storeAccessToken(accessToken);
-            console.log("Access token obtained:", accessToken);
+            getGitHubReposFollowers("repos", accessToken).then((data) => {
+              storeRepos(data);
+            });
           }
         })
         .catch((error) => {
