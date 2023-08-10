@@ -1,6 +1,6 @@
 import { openDB } from "idb";
 
-async function storeAccessToken(accessToken: string) {
+async function storeGitHubAccessToken(accessToken: string) {
   try {
     const db = await openDB("GitHubAccessToken", 1, {
       upgrade(db) {
@@ -45,7 +45,7 @@ async function storeGitHubData(databaseName, storeName, data) {
   }
 }
 
-async function exchangeAuthorizationCodeForToken(
+async function getGitHubAccessToken(
   authorizationCode: string
 ): Promise<string | null> {
   try {
@@ -94,10 +94,10 @@ chrome.webNavigation.onCompleted.addListener(({ url }) => {
     const authorizationCode = params.get("code");
 
     if (authorizationCode) {
-      exchangeAuthorizationCodeForToken(authorizationCode)
+      getGitHubAccessToken(authorizationCode)
         .then((accessToken) => {
           if (accessToken) {
-            storeAccessToken(accessToken);
+            storeGitHubAccessToken(accessToken);
             getGitHubReposFollowers("repos", accessToken).then((data) => {
               storeGitHubData("GithHubRepos", "ReposStore", data);
             });
@@ -112,27 +112,3 @@ chrome.webNavigation.onCompleted.addListener(({ url }) => {
     }
   }
 });
-
-// Main function to handle the extension's background activities
-// async function main() {
-//   // Your background logic here
-
-//   // Example: Make API calls using the stored access token
-//   const accessToken = await retrieveStoredAccessToken();
-//   if (accessToken) {
-//     const apiData = await makeApiCall(accessToken);
-//     console.log("API data:", apiData);
-//   }
-// }
-
-// // Listen for the extension installation or update event
-// chrome.runtime.onInstalled.addListener(() => {
-//   main();
-// });
-
-// // Listen for messages from the popup or content script
-// chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-//   if (message.type === "some_message_type") {
-//     // Handle the message from the popup or content script
-//   }
-// });
