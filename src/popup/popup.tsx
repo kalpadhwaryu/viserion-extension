@@ -4,7 +4,7 @@ import App from "./App";
 
 const popup = (
   <div>
-    <h1>Hello World</h1>
+    <h2>Viserion</h2>
     <App />
   </div>
 );
