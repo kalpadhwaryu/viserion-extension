@@ -1,5 +1,6 @@
 import { IDBPCursorWithValue, openDB } from "idb";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, SetStateAction } from "react";
+import { Follower, Repo } from "../model";
 
 const loginWithGitHub = () => {
   chrome.tabs.create({
@@ -10,14 +11,15 @@ const loginWithGitHub = () => {
 };
 
 const App = () => {
-  const [githubAccessToken, setGithubAccessToken] = useState("");
-  const [repos, setRepos] = useState([]);
-  const [followers, setFollowers] = useState([]);
+  const [githubAccessToken, setGithubAccessToken] = useState<string>("");
+  const [repos, setRepos] = useState<Repo[]>([]);
+  const [followers, setFollowers] = useState<Follower[]>([]);
 
-  async function fetchReposFromIndexedDB() {
-    const databaseName = "GithHubRepos";
-    const storeName = "ReposStore";
-
+  const fetchGitHubDataFromIndexedDB = async (
+    databaseName: string,
+    storeName: string,
+    setState: (data: SetStateAction<Repo[] | Follower[]>) => void
+  ): Promise<void> => {
     try {
       const dbNames = await indexedDB.databases();
       const dbExists = dbNames.some((db) => db.name === databaseName);
@@ -33,15 +35,15 @@ const App = () => {
 
             const cursorReq = store.openCursor();
 
-            const reposData = [];
+            const data: Follower[] | Repo[] = [];
             cursorReq.onsuccess = (event) => {
               const cursor = (event.target as IDBRequest<IDBPCursorWithValue>)
                 .result;
               if (cursor) {
-                reposData.push(cursor.value);
+                data.push(cursor.value);
                 cursor.continue();
               } else {
-                setRepos(reposData);
+                setState(data);
               }
             };
           } else {
@@ -52,51 +54,9 @@ const App = () => {
         console.log(`${databaseName} database not found.`);
       }
     } catch (error) {
-      console.error("Error fetching repositories from IndexedDB:", error);
+      console.error("Error fetching data from IndexedDB:", error);
     }
-  }
-
-  async function fetchFollowersFromIndexedDB() {
-    const databaseName = "GithHubFollowers";
-    const storeName = "FollowersStore";
-
-    try {
-      const dbNames = await indexedDB.databases();
-      const dbExists = dbNames.some((db) => db.name === databaseName);
-
-      if (dbExists) {
-        const openReq = indexedDB.open(databaseName, 1);
-
-        openReq.onsuccess = () => {
-          const db = openReq.result;
-          if (db.objectStoreNames.contains(storeName)) {
-            const tx = db.transaction(storeName, "readonly");
-            const store = tx.objectStore(storeName);
-
-            const cursorReq = store.openCursor();
-
-            const followersData = [];
-            cursorReq.onsuccess = (event) => {
-              const cursor = (event.target as IDBRequest<IDBPCursorWithValue>)
-                .result;
-              if (cursor) {
-                followersData.push(cursor.value);
-                cursor.continue();
-              } else {
-                setFollowers(followersData);
-              }
-            };
-          } else {
-            console.log(`${storeName} object store not found.`);
-          }
-        };
-      } else {
-        console.log(`${databaseName} database not found.`);
-      }
-    } catch (error) {
-      console.error("Error fetching repositories from IndexedDB:", error);
-    }
-  }
+  };
 
   useEffect(() => {
     async function getAccessTokenFromIndexedDB() {
@@ -109,14 +69,10 @@ const App = () => {
           if (db.objectStoreNames.contains("AccessTokenStore")) {
             const tx = db.transaction("AccessTokenStore", "readonly");
             const store = tx.objectStore("AccessTokenStore");
-            const storedAccessToken = await store.get("access_token");
+            const storedAccessToken: string = await store.get("access_token");
 
             if (storedAccessToken) {
               setGithubAccessToken(storedAccessToken);
-              console.log(
-                "Access token retrieved from IndexedDB:",
-                storedAccessToken
-              );
             } else {
               console.log("Access token not found in IndexedDB.");
             }
@@ -130,7 +86,6 @@ const App = () => {
         console.error("Error retrieving access token:", error);
       }
     }
-
     getAccessTokenFromIndexedDB();
   }, []);
 
@@ -139,10 +94,28 @@ const App = () => {
       {githubAccessToken ? (
         <>
           <h3>GitHub Logged in</h3>
-          <button onClick={fetchReposFromIndexedDB}>Get your repos</button>
+          <button
+            onClick={() => {
+              fetchGitHubDataFromIndexedDB(
+                "GithHubRepos",
+                "ReposStore",
+                setRepos
+              );
+            }}
+          >
+            Get your repos
+          </button>
           {repos.length > 0 &&
             repos.map((repo) => <h3 key={repo.id}>{repo.name}</h3>)}
-          <button onClick={fetchFollowersFromIndexedDB}>
+          <button
+            onClick={() => {
+              fetchGitHubDataFromIndexedDB(
+                "GithHubFollowers",
+                "FollowersStore",
+                setFollowers
+              );
+            }}
+          >
             Get your followers
           </button>
           {followers.length > 0 &&
