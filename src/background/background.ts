@@ -98,10 +98,18 @@ chrome.webNavigation.onCompleted.addListener(({ url }) => {
         .then((accessToken) => {
           if (accessToken) {
             storeAccessToken(accessToken);
-            getGitHubReposFollowers("repos", accessToken).then((data) => {
-              // storeGitHubData("GithHubFollowers", "FollowersStore", data);
-              storeGitHubData("GithHubRepos", "ReposStore", data);
-            });
+
+            chrome.runtime.onMessage.addListener(
+              (message, sender, sendResponse) => {
+                console.log(message);
+
+                // Send the response back to the popup
+              }
+            );
+            // getGitHubReposFollowers("repos", accessToken).then((data) => {
+            //   // storeGitHubData("GithHubFollowers", "FollowersStore", data);
+            //   storeGitHubData("GithHubRepos", "ReposStore", data);
+            // });
           }
         })
         .catch((error) => {
