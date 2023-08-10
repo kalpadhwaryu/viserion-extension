@@ -1,4 +1,5 @@
 import { openDB } from "idb";
+import { Follower, Repo } from "../model";
 
 async function storeGitHubAccessToken(accessToken: string) {
   try {
@@ -67,10 +68,10 @@ async function getGitHubAccessToken(
   }
 }
 
-async function getGitHubReposFollowers(
+export async function getGitHubReposFollowers(
   entity: string,
   accessToken: string
-): Promise<any> {
+): Promise<Follower[] | Repo[]> {
   try {
     const response = await fetch(`http://localhost:8080/github/${entity}`, {
       method: "GET",
@@ -80,7 +81,7 @@ async function getGitHubReposFollowers(
       },
     });
 
-    const data = await response.json();
+    const data: Follower[] | Repo[] = await response.json();
     return data;
   } catch (error) {
     console.error("Error exchanging authorization code:", error);

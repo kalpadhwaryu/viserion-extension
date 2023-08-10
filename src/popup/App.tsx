@@ -1,6 +1,7 @@
 import { IDBPCursorWithValue, openDB } from "idb";
 import React, { useState, useEffect, SetStateAction } from "react";
 import { Follower, Repo } from "../model";
+import { getGitHubReposFollowers } from "../background/background";
 
 const loginWithGitHub = () => {
   chrome.tabs.create({
@@ -12,7 +13,10 @@ const loginWithGitHub = () => {
 
 const App = () => {
   const [githubAccessToken, setGithubAccessToken] = useState<string>("");
+  const [jiraAccessToken, setJiraAccessToken] = useState<string>("");
   const [repos, setRepos] = useState<Repo[]>([]);
+  const [reposFromAPI, setReposFromAPI] = useState<Repo[]>([]);
+  const [reposLoading, setReposLoading] = useState<boolean>(false);
   const [followers, setFollowers] = useState<Follower[]>([]);
 
   const fetchGitHubDataFromIndexedDB = async (
@@ -58,34 +62,35 @@ const App = () => {
     }
   };
 
-  useEffect(() => {
-    async function getAccessTokenFromIndexedDB() {
-      const dbNames = await indexedDB.databases();
-      try {
-        const dbExists = dbNames.some((db) => db.name === "GitHubAccessToken");
+  const getAccessTokenFromIndexedDB = async () => {
+    const dbNames = await indexedDB.databases();
+    try {
+      const dbExists = dbNames.some((db) => db.name === "GitHubAccessToken");
 
-        if (dbExists) {
-          const db = await openDB("GitHubAccessToken", 1);
-          if (db.objectStoreNames.contains("AccessTokenStore")) {
-            const tx = db.transaction("AccessTokenStore", "readonly");
-            const store = tx.objectStore("AccessTokenStore");
-            const storedAccessToken: string = await store.get("access_token");
+      if (dbExists) {
+        const db = await openDB("GitHubAccessToken", 1);
+        if (db.objectStoreNames.contains("AccessTokenStore")) {
+          const tx = db.transaction("AccessTokenStore", "readonly");
+          const store = tx.objectStore("AccessTokenStore");
+          const storedAccessToken: string = await store.get("access_token");
 
-            if (storedAccessToken) {
-              setGithubAccessToken(storedAccessToken);
-            } else {
-              console.log("Access token not found in IndexedDB.");
-            }
+          if (storedAccessToken) {
+            setGithubAccessToken(storedAccessToken);
           } else {
-            console.log("AccessTokenStore object store not found.");
+            console.log("Access token not found in IndexedDB.");
           }
         } else {
-          console.log("GitHubAccessToken database not found.");
+          console.log("AccessTokenStore object store not found.");
         }
-      } catch (error) {
-        console.error("Error retrieving access token:", error);
+      } else {
+        console.log("GitHubAccessToken database not found.");
       }
+    } catch (error) {
+      console.error("Error retrieving access token:", error);
     }
+  };
+
+  useEffect(() => {
     getAccessTokenFromIndexedDB();
   }, []);
 
@@ -103,10 +108,34 @@ const App = () => {
               );
             }}
           >
-            Get your repos
+            Get your repos from DB
           </button>
           {repos.length > 0 &&
             repos.map((repo) => <h3 key={repo.id}>{repo.name}</h3>)}
+          <button
+            onClick={async () => {
+              setReposLoading(true);
+              const repositories = (await getGitHubReposFollowers(
+                "repos",
+                githubAccessToken
+              )) as Repo[];
+              setReposFromAPI(repositories);
+              setReposLoading(false);
+            }}
+          >
+            Get your repos from API
+          </button>
+          {reposLoading ? (
+            <>Loading...</>
+          ) : (
+            <>
+              {reposFromAPI.length > 0 &&
+                reposFromAPI.map((repoFromApi) => (
+                  <h3 key={repoFromApi.id}>{repoFromApi.name}</h3>
+                ))}
+            </>
+          )}
+
           <button
             onClick={() => {
               fetchGitHubDataFromIndexedDB(
@@ -116,7 +145,7 @@ const App = () => {
               );
             }}
           >
-            Get your followers
+            Get your followers from DB
           </button>
           {followers.length > 0 &&
             followers.map((follower) => (
@@ -125,6 +154,13 @@ const App = () => {
         </>
       ) : (
         <button onClick={loginWithGitHub}>Login With GitHub</button>
+      )}
+      {jiraAccessToken ? (
+        <>
+          <h3>Jira Logged in</h3>
+        </>
+      ) : (
+        <button>Login With Jira</button>
       )}
     </div>
   );
