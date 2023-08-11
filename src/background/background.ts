@@ -1,7 +1,7 @@
 import { openDB } from "idb";
 import { Follower, Repo } from "../model";
 
-async function storeGitHubAccessToken(accessToken: string) {
+const storeGitHubAccessToken = async (accessToken: string) => {
   try {
     const db = await openDB("GitHubAccessToken", 1, {
       upgrade(db) {
@@ -20,9 +20,9 @@ async function storeGitHubAccessToken(accessToken: string) {
   } catch (error) {
     console.error("Error storing access token:", error);
   }
-}
+};
 
-async function storeGitHubData(databaseName, storeName, data) {
+const storeGitHubData = async (databaseName, storeName, data) => {
   try {
     const db = await openDB(databaseName, 1, {
       upgrade(db) {
@@ -44,11 +44,11 @@ async function storeGitHubData(databaseName, storeName, data) {
   } catch (error) {
     console.error(`Error storing ${storeName} in IndexedDB:`, error);
   }
-}
+};
 
-async function getGitHubAccessToken(
+const getGitHubAccessToken = async (
   authorizationCode: string
-): Promise<string | null> {
+): Promise<string | null> => {
   try {
     const response = await fetch(
       `http://localhost:8080/github/getAccessToken?code=${authorizationCode}`,
@@ -66,12 +66,12 @@ async function getGitHubAccessToken(
     console.error("Error exchanging authorization code:", error);
     return null;
   }
-}
+};
 
-export async function getGitHubReposFollowers(
+export const getGitHubReposFollowers = async (
   entity: string,
   accessToken: string
-): Promise<Follower[] | Repo[]> {
+): Promise<Follower[] | Repo[]> => {
   try {
     const response = await fetch(`http://localhost:8080/github/${entity}`, {
       method: "GET",
@@ -87,7 +87,7 @@ export async function getGitHubReposFollowers(
     console.error("Error exchanging authorization code:", error);
     return null;
   }
-}
+};
 
 chrome.webNavigation.onCompleted.addListener(({ url }) => {
   if (url.startsWith("http://localhost:8080")) {
