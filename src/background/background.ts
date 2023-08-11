@@ -1,9 +1,9 @@
 import { openDB } from "idb";
 import { Follower, Repo } from "../model";
 
-const storeGitHubAccessToken = async (accessToken: string) => {
+const storeAccessToken = async (databaseName: string, accessToken: string) => {
   try {
-    const db = await openDB("GitHubAccessToken", 1, {
+    const db = await openDB(databaseName, 1, {
       upgrade(db) {
         if (!db.objectStoreNames.contains("AccessTokenStore")) {
           db.createObjectStore("AccessTokenStore");
@@ -22,7 +22,7 @@ const storeGitHubAccessToken = async (accessToken: string) => {
   }
 };
 
-const storeGitHubData = async (databaseName, storeName, data) => {
+const storeData = async (databaseName, storeName, data) => {
   try {
     const db = await openDB(databaseName, 1, {
       upgrade(db) {
@@ -68,6 +68,30 @@ const getGitHubAccessToken = async (
   }
 };
 
+const getJiraAccessToken = async (
+  authorizationCode: string
+): Promise<string | null> => {
+  try {
+    const reqBody = {
+      code: authorizationCode,
+    };
+    const response = await fetch(`http://localhost:8080/jira/getAccessToken`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(reqBody),
+    });
+
+    const data = await response.json();
+    return data.access_token;
+  } catch (error) {
+    console.error("Error exchanging authorization code:", error);
+    return null;
+  }
+};
+
 export const getGitHubReposFollowers = async (
   entity: string,
   accessToken: string
@@ -84,7 +108,28 @@ export const getGitHubReposFollowers = async (
     const data: Follower[] | Repo[] = await response.json();
     return data;
   } catch (error) {
-    console.error("Error exchanging authorization code:", error);
+    console.error("Error getting data", error);
+    return null;
+  }
+};
+
+export const getJiraProjectsDashboards = async (
+  entity: string,
+  accessToken: string
+) => {
+  try {
+    const response = await fetch(`http://localhost:8080/jira/${entity}`, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        Authorization: "Bearer " + accessToken,
+      },
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error getting data", error);
     return null;
   }
 };
@@ -96,22 +141,42 @@ chrome.webNavigation.onCompleted.addListener(({ url }) => {
     const state = params.get("state");
 
     if (authorizationCode && state) {
-      
-    } else if (authorizationCode) {
-      getGitHubAccessToken(authorizationCode)
-        .then((accessToken) => {
-          if (accessToken) {
-            storeGitHubAccessToken(accessToken);
-            getGitHubReposFollowers("repos", accessToken).then((data) => {
-              storeGitHubData("GithHubRepos", "ReposStore", data);
-            });
-            getGitHubReposFollowers("followers", accessToken).then((data) => {
-              storeGitHubData("GithHubFollowers", "FollowersStore", data);
-            });
+      getJiraAccessToken(authorizationCode)
+        .then((jiraAccessToken) => {
+          if (jiraAccessToken) {
+            storeAccessToken("JiraAccessToken", jiraAccessToken);
+            getJiraProjectsDashboards("project", jiraAccessToken).then(
+              (data) => {
+                storeData("JiraProjects", "ProjectsStore", data);
+              }
+            );
+            getJiraProjectsDashboards("dashboard", jiraAccessToken).then(
+              (data) => {
+                storeData("JiraDashboards", "DashboardsStore", data.dashboards);
+              }
+            );
           }
         })
         .catch((error) => {
-          console.error("Error getting access token:", error);
+          console.error("Error getting jira access token:", error);
+        });;
+    } else if (authorizationCode) {
+      getGitHubAccessToken(authorizationCode)
+        .then((githubAccessToken) => {
+          if (githubAccessToken) {
+            storeAccessToken("GitHubAccessToken", githubAccessToken);
+            getGitHubReposFollowers("repos", githubAccessToken).then((data) => {
+              storeData("GithHubRepos", "ReposStore", data);
+            });
+            getGitHubReposFollowers("followers", githubAccessToken).then(
+              (data) => {
+                storeData("GithHubFollowers", "FollowersStore", data);
+              }
+            );
+          }
+        })
+        .catch((error) => {
+          console.error("Error getting github access token:", error);
         });
     }
   }
