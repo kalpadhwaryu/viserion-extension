@@ -1,5 +1,5 @@
 import { openDB } from "idb";
-import { Follower, Repo } from "../model";
+import { DashboardData, DataFromAPI, Follower, Project, Repo } from "../model";
 
 const storeAccessToken = async (databaseName: string, accessToken: string) => {
   try {
@@ -22,7 +22,11 @@ const storeAccessToken = async (databaseName: string, accessToken: string) => {
   }
 };
 
-const storeData = async (databaseName, storeName, data) => {
+const storeData = async (
+  databaseName: string,
+  storeName: string,
+  data: DataFromAPI
+) => {
   try {
     const db = await openDB(databaseName, 1, {
       upgrade(db) {
@@ -92,41 +96,24 @@ const getJiraAccessToken = async (
   }
 };
 
-export const getGitHubReposFollowers = async (
+export const getData = async (
+  integration: string,
   entity: string,
   accessToken: string
-): Promise<Follower[] | Repo[]> => {
+): Promise<DataFromAPI | DashboardData> => {
   try {
-    const response = await fetch(`http://localhost:8080/github/${entity}`, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        Authorization: "Bearer " + accessToken,
-      },
-    });
+    const response = await fetch(
+      `http://localhost:8080/${integration}/${entity}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          Authorization: "Bearer " + accessToken,
+        },
+      }
+    );
 
-    const data: Follower[] | Repo[] = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error getting data", error);
-    return null;
-  }
-};
-
-export const getJiraProjectsDashboards = async (
-  entity: string,
-  accessToken: string
-) => {
-  try {
-    const response = await fetch(`http://localhost:8080/jira/${entity}`, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        Authorization: "Bearer " + accessToken,
-      },
-    });
-
-    const data = await response.json();
+    const data: DataFromAPI | DashboardData = await response.json();
     return data;
   } catch (error) {
     console.error("Error getting data", error);
@@ -145,34 +132,36 @@ chrome.webNavigation.onCompleted.addListener(({ url }) => {
         .then((jiraAccessToken) => {
           if (jiraAccessToken) {
             storeAccessToken("JiraAccessToken", jiraAccessToken);
-            getJiraProjectsDashboards("project", jiraAccessToken).then(
-              (data) => {
-                storeData("JiraProjects", "ProjectsStore", data);
-              }
-            );
-            getJiraProjectsDashboards("dashboard", jiraAccessToken).then(
-              (data) => {
-                storeData("JiraDashboards", "DashboardsStore", data.dashboards);
-              }
-            );
+            getData("jira", "project", jiraAccessToken).then((data) => {
+              storeData("JiraProjects", "ProjectsStore", data as Project[]);
+            });
+            getData("jira", "dashboard", jiraAccessToken).then((data) => {
+              storeData(
+                "JiraDashboards",
+                "DashboardsStore",
+                (data as DashboardData).dashboards
+              );
+            });
           }
         })
         .catch((error) => {
           console.error("Error getting jira access token:", error);
-        });;
+        });
     } else if (authorizationCode) {
       getGitHubAccessToken(authorizationCode)
         .then((githubAccessToken) => {
           if (githubAccessToken) {
             storeAccessToken("GitHubAccessToken", githubAccessToken);
-            getGitHubReposFollowers("repos", githubAccessToken).then((data) => {
-              storeData("GithHubRepos", "ReposStore", data);
+            getData("github", "repos", githubAccessToken).then((data) => {
+              storeData("GithHubRepos", "ReposStore", data as Repo[]);
             });
-            getGitHubReposFollowers("followers", githubAccessToken).then(
-              (data) => {
-                storeData("GithHubFollowers", "FollowersStore", data);
-              }
-            );
+            getData("github", "followers", githubAccessToken).then((data) => {
+              storeData(
+                "GithHubFollowers",
+                "FollowersStore",
+                data as Follower[]
+              );
+            });
           }
         })
         .catch((error) => {

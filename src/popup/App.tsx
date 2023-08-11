@@ -1,7 +1,7 @@
 import { IDBPCursorWithValue, openDB } from "idb";
 import React, { useState, useEffect, SetStateAction } from "react";
 import { Follower, Repo } from "../model";
-import { getGitHubReposFollowers } from "../background/background";
+import { getData } from "../background/background";
 
 const login = (integration: string) => {
   chrome.tabs.create({
@@ -126,7 +126,8 @@ const App = () => {
           <button
             onClick={async () => {
               setReposLoading(true);
-              const repositories = (await getGitHubReposFollowers(
+              const repositories = (await getData(
+                "github",
                 "repos",
                 githubAccessToken
               )) as Repo[];
@@ -166,7 +167,8 @@ const App = () => {
           <button
             onClick={async () => {
               setFollowersLoading(true);
-              const githubFollowers = (await getGitHubReposFollowers(
+              const githubFollowers = (await getData(
+                "github",
                 "followers",
                 githubAccessToken
               )) as Follower[];
