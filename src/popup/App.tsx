@@ -18,6 +18,8 @@ const App = () => {
   const [reposFromAPI, setReposFromAPI] = useState<Repo[]>([]);
   const [reposLoading, setReposLoading] = useState<boolean>(false);
   const [followers, setFollowers] = useState<Follower[]>([]);
+  const [followersFromAPI, setFollowersFromAPI] = useState<Follower[]>([]);
+  const [followersLoading, setFollowersLoading] = useState<boolean>(false);
 
   const fetchGitHubDataFromIndexedDB = async (
     databaseName: string,
@@ -112,6 +114,7 @@ const App = () => {
           </button>
           {repos.length > 0 &&
             repos.map((repo) => <h3 key={repo.id}>{repo.name}</h3>)}
+
           <button
             onClick={async () => {
               setReposLoading(true);
@@ -151,10 +154,36 @@ const App = () => {
             followers.map((follower) => (
               <h3 key={follower.id}>{follower.login}</h3>
             ))}
+
+          <button
+            onClick={async () => {
+              setFollowersLoading(true);
+              const githubFollowers = (await getGitHubReposFollowers(
+                "followers",
+                githubAccessToken
+              )) as Follower[];
+              setFollowersFromAPI(githubFollowers);
+              setFollowersLoading(false);
+            }}
+          >
+            Get your followers from API
+          </button>
+          {followersLoading ? (
+            <>Loading...</>
+          ) : (
+            <>
+              {followersFromAPI.length > 0 &&
+                followersFromAPI.map((followerFromApi) => (
+                  <h3 key={followerFromApi.id}>{followerFromApi.login}</h3>
+                ))}
+            </>
+          )}
         </>
       ) : (
         <button onClick={loginWithGitHub}>Login With GitHub</button>
       )}
+
+      
       {jiraAccessToken ? (
         <>
           <h3>Jira Logged in</h3>
