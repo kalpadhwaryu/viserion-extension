@@ -124,86 +124,108 @@ const App = () => {
     <div>
       {githubAccessToken ? (
         <>
-          <h3>GitHub Logged in</h3>
-          <button
-            onClick={() => {
-              fetchDataFromIndexedDB(
-                Databases.GITHUB_REPOS,
-                ObjectStores.REPOS_STORE,
-                setRepos
-              );
-            }}
+          <table
+            border={1}
+            style={{ borderStyle: "solid", alignContent: "center" }}
           >
-            Get your repos from DB
-          </button>
-          {repos.length > 0 &&
-            repos.map((repo) => <h3 key={repo.id}>{repo.name}</h3>)}
-
-          <button
-            onClick={async () => {
-              setReposLoading(true);
-              const repositories = (await getData(
-                Integrations.GITHUB,
-                Entities.REPOS,
-                githubAccessToken
-              )) as Repo[];
-              setReposFromAPI(repositories);
-              setReposLoading(false);
-            }}
-          >
-            Get your repos from API
-          </button>
-          {reposLoading ? (
-            <>Loading...</>
-          ) : (
-            <>
-              {reposFromAPI.length > 0 &&
-                reposFromAPI.map((repoFromApi) => (
-                  <h3 key={repoFromApi.id}>{repoFromApi.name}</h3>
-                ))}
-            </>
-          )}
-
-          <button
-            onClick={() => {
-              fetchDataFromIndexedDB(
-                Databases.GITHUB_FOLLOWERS,
-                ObjectStores.FOLLOWERS_STORE,
-                setFollowers
-              );
-            }}
-          >
-            Get your followers from DB
-          </button>
-          {followers.length > 0 &&
-            followers.map((follower) => (
-              <h3 key={follower.id}>{follower.login}</h3>
-            ))}
-
-          <button
-            onClick={async () => {
-              setFollowersLoading(true);
-              const githubFollowers = (await getData(
-                Integrations.GITHUB,
-                Entities.FOLLOWERS,
-                githubAccessToken
-              )) as Follower[];
-              setFollowersFromAPI(githubFollowers);
-              setFollowersLoading(false);
-            }}
-          >
-            Get your followers from API
-          </button>
-          {followersLoading ? (
-            <>Loading...</>
-          ) : (
-            <>
-              {followersFromAPI.length > 0 &&
-                followersFromAPI.map((followerFromApi) => (
-                  <h3 key={followerFromApi.id}>{followerFromApi.login}</h3>
-                ))}
-            </>
-          )}
+            <tbody>
+              <tr>
+                <td colSpan={2}>
+                  <h3 style={{ textAlign: "center" }}>GitHub Logged in</h3>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <button
+                    onClick={() => {
+                      fetchDataFromIndexedDB(
+                        Databases.GITHUB_REPOS,
+                        ObjectStores.REPOS_STORE,
+                        setRepos
+                      );
+                    }}
+                  >
+                    Get your repos from DB
+                  </button>
+                  {repos.length > 0 &&
+                    repos.map((repo) => <h3 key={repo.id}>{repo.name}</h3>)}
+                </td>
+                <td>
+                  <button
+                    onClick={async () => {
+                      setReposLoading(true);
+                      const repositories = (await getData(
+                        Integrations.GITHUB,
+                        Entities.REPOS,
+                        githubAccessToken
+                      )) as Repo[];
+                      setReposFromAPI(repositories);
+                      setReposLoading(false);
+                    }}
+                  >
+                    Get your repos from API
+                  </button>
+                  {reposLoading ? (
+                    <>Loading...</>
+                  ) : (
+                    <>
+                      {reposFromAPI.length > 0 &&
+                        reposFromAPI.map((repoFromApi) => (
+                          <h3 key={repoFromApi.id}>{repoFromApi.name}</h3>
+                        ))}
+                    </>
+                  )}
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <button
+                    onClick={() => {
+                      fetchDataFromIndexedDB(
+                        Databases.GITHUB_FOLLOWERS,
+                        ObjectStores.FOLLOWERS_STORE,
+                        setFollowers
+                      );
+                    }}
+                  >
+                    Get your followers from DB
+                  </button>
+                  {followers.length > 0 &&
+                    followers.map((follower) => (
+                      <h3 key={follower.id}>{follower.login}</h3>
+                    ))}
+                </td>
+                <td>
+                  <button
+                    onClick={async () => {
+                      setFollowersLoading(true);
+                      const githubFollowers = (await getData(
+                        Integrations.GITHUB,
+                        Entities.FOLLOWERS,
+                        githubAccessToken
+                      )) as Follower[];
+                      setFollowersFromAPI(githubFollowers);
+                      setFollowersLoading(false);
+                    }}
+                  >
+                    Get your followers from API
+                  </button>
+                  {followersLoading ? (
+                    <>Loading...</>
+                  ) : (
+                    <>
+                      {followersFromAPI.length > 0 &&
+                        followersFromAPI.map((followerFromApi) => (
+                          <h3 key={followerFromApi.id}>
+                            {followerFromApi.login}
+                          </h3>
+                        ))}
+                    </>
+                  )}
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </>
       ) : (
         <button onClick={() => login(Integrations.GITHUB)}>
@@ -213,7 +235,7 @@ const App = () => {
 
       {jiraAccessToken ? (
         <>
-          <h3>Jira Logged in</h3>
+          <h3 style={{ textAlign: "center" }}>Jira Logged in</h3>
           <button
             onClick={() => {
               fetchDataFromIndexedDB(

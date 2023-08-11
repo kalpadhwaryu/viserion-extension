@@ -3,8 +3,8 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 
 const popup = (
-  <div>
-    <h2>Viserion</h2>
+  <div style={{ height: 500, width: 300}}>
+    <h2 style={{ textAlign: "center" }}>Viserion</h2>
     <App />
   </div>
 );
