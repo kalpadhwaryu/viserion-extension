@@ -1,12 +1,13 @@
 import { IDBPCursorWithValue, openDB } from "idb";
 import React, { useState, useEffect, SetStateAction } from "react";
-import { Follower, Repo } from "../model";
+import { DataFromAPI, Follower, Project, Repo } from "../model";
 import { getData } from "../background/background";
+import { Databases, Entities, Integrations, ObjectStores } from "../enums";
 
 const login = (integration: string) => {
   chrome.tabs.create({
     url:
-      integration === "github"
+      integration === Integrations.GITHUB
         ? "https://github.com/login/oauth/authorize?client_id=" +
           process.env.REACT_APP_GITHUB_CLIENT_ID
         : "https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=" +
@@ -21,7 +22,6 @@ const login = (integration: string) => {
 
 const App = () => {
   const [githubAccessToken, setGithubAccessToken] = useState<string>("");
-  const [jiraAccessToken, setJiraAccessToken] = useState<string>("");
   const [repos, setRepos] = useState<Repo[]>([]);
   const [reposFromAPI, setReposFromAPI] = useState<Repo[]>([]);
   const [reposLoading, setReposLoading] = useState<boolean>(false);
@@ -29,10 +29,13 @@ const App = () => {
   const [followersFromAPI, setFollowersFromAPI] = useState<Follower[]>([]);
   const [followersLoading, setFollowersLoading] = useState<boolean>(false);
 
-  const fetchGitHubDataFromIndexedDB = async (
+  const [jiraAccessToken, setJiraAccessToken] = useState<string>("");
+  const [projects, setProjects] = useState<Project[]>([]);
+
+  const fetchDataFromIndexedDB = async (
     databaseName: string,
     storeName: string,
-    setState: (data: SetStateAction<Repo[] | Follower[]>) => void
+    setState: (data: SetStateAction<DataFromAPI>) => void
   ): Promise<void> => {
     try {
       const dbNames = await indexedDB.databases();
@@ -72,20 +75,26 @@ const App = () => {
     }
   };
 
-  const getAccessTokenFromIndexedDB = async () => {
+  const getAccessTokenFromIndexedDB = async (
+    databaseName: string,
+    setState: (data: SetStateAction<string>) => void
+  ) => {
     const dbNames = await indexedDB.databases();
     try {
-      const dbExists = dbNames.some((db) => db.name === "GitHubAccessToken");
+      const dbExists = dbNames.some((db) => db.name === databaseName);
 
       if (dbExists) {
-        const db = await openDB("GitHubAccessToken", 1);
-        if (db.objectStoreNames.contains("AccessTokenStore")) {
-          const tx = db.transaction("AccessTokenStore", "readonly");
-          const store = tx.objectStore("AccessTokenStore");
+        const db = await openDB(databaseName, 1);
+        if (db.objectStoreNames.contains(ObjectStores.ACCESS_TOKEN_STORE)) {
+          const tx = db.transaction(
+            ObjectStores.ACCESS_TOKEN_STORE,
+            "readonly"
+          );
+          const store = tx.objectStore(ObjectStores.ACCESS_TOKEN_STORE);
           const storedAccessToken: string = await store.get("access_token");
 
           if (storedAccessToken) {
-            setGithubAccessToken(storedAccessToken);
+            setState(storedAccessToken);
           } else {
             console.log("Access token not found in IndexedDB.");
           }
@@ -93,7 +102,7 @@ const App = () => {
           console.log("AccessTokenStore object store not found.");
         }
       } else {
-        console.log("GitHubAccessToken database not found.");
+        console.log(`${databaseName} database not found.`);
       }
     } catch (error) {
       console.error("Error retrieving access token:", error);
@@ -101,7 +110,14 @@ const App = () => {
   };
 
   useEffect(() => {
-    getAccessTokenFromIndexedDB();
+    getAccessTokenFromIndexedDB(
+      Databases.GITHUB_ACCESS_TOKEN,
+      setGithubAccessToken
+    );
+    getAccessTokenFromIndexedDB(
+      Databases.JIRA_ACCESS_TOKEN,
+      setJiraAccessToken
+    );
   }, []);
 
   return (
@@ -111,9 +127,9 @@ const App = () => {
           <h3>GitHub Logged in</h3>
           <button
             onClick={() => {
-              fetchGitHubDataFromIndexedDB(
-                "GithHubRepos",
-                "ReposStore",
+              fetchDataFromIndexedDB(
+                Databases.GITHUB_REPOS,
+                ObjectStores.REPOS_STORE,
                 setRepos
               );
             }}
@@ -127,8 +143,8 @@ const App = () => {
             onClick={async () => {
               setReposLoading(true);
               const repositories = (await getData(
-                "github",
-                "repos",
+                Integrations.GITHUB,
+                Entities.REPOS,
                 githubAccessToken
               )) as Repo[];
               setReposFromAPI(repositories);
@@ -150,9 +166,9 @@ const App = () => {
 
           <button
             onClick={() => {
-              fetchGitHubDataFromIndexedDB(
-                "GithHubFollowers",
-                "FollowersStore",
+              fetchDataFromIndexedDB(
+                Databases.GITHUB_FOLLOWERS,
+                ObjectStores.FOLLOWERS_STORE,
                 setFollowers
               );
             }}
@@ -168,8 +184,8 @@ const App = () => {
             onClick={async () => {
               setFollowersLoading(true);
               const githubFollowers = (await getData(
-                "github",
-                "followers",
+                Integrations.GITHUB,
+                Entities.FOLLOWERS,
                 githubAccessToken
               )) as Follower[];
               setFollowersFromAPI(githubFollowers);
@@ -190,15 +206,32 @@ const App = () => {
           )}
         </>
       ) : (
-        <button onClick={() => login("github")}>Login With GitHub</button>
+        <button onClick={() => login(Integrations.GITHUB)}>
+          Login With GitHub
+        </button>
       )}
 
       {jiraAccessToken ? (
         <>
           <h3>Jira Logged in</h3>
+          <button
+            onClick={() => {
+              fetchDataFromIndexedDB(
+                Databases.JIRA_PROJECTS,
+                ObjectStores.PROJECTS_STORE,
+                setProjects
+              );
+            }}
+          >
+            Get your projects from DB
+          </button>
+          {projects.length > 0 &&
+            projects.map((project) => <h3 key={project.id}>{project.name}</h3>)}
         </>
       ) : (
-        <button onClick={() => login("jira")}>Login With Jira</button>
+        <button onClick={() => login(Integrations.JIRA)}>
+          Login With Jira
+        </button>
       )}
     </div>
   );
