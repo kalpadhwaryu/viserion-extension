@@ -93,8 +93,11 @@ chrome.webNavigation.onCompleted.addListener(({ url }) => {
   if (url.startsWith("http://localhost:8080")) {
     const params = new URLSearchParams(new URL(url).search);
     const authorizationCode = params.get("code");
+    const state = params.get("state");
 
-    if (authorizationCode) {
+    if (authorizationCode && state) {
+      
+    } else if (authorizationCode) {
       getGitHubAccessToken(authorizationCode)
         .then((accessToken) => {
           if (accessToken) {

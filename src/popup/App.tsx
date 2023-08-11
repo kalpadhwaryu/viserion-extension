@@ -3,11 +3,19 @@ import React, { useState, useEffect, SetStateAction } from "react";
 import { Follower, Repo } from "../model";
 import { getGitHubReposFollowers } from "../background/background";
 
-const loginWithGitHub = () => {
+const login = (integration: string) => {
   chrome.tabs.create({
     url:
-      "https://github.com/login/oauth/authorize?client_id=" +
-      process.env.REACT_APP_GITHUB_CLIENT_ID,
+      integration === "github"
+        ? "https://github.com/login/oauth/authorize?client_id=" +
+          process.env.REACT_APP_GITHUB_CLIENT_ID
+        : "https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=" +
+          process.env.REACT_APP_JIRA_CLIENT_ID +
+          "&scope=" +
+          process.env.REACT_APP_JIRA_SCOPE +
+          "&redirect_uri=http%3A%2F%2Flocalhost%3A8080&state=$" +
+          process.env.REACT_APP_JIRA_STATE +
+          "&response_type=code&prompt=consent",
   });
 };
 
@@ -180,16 +188,15 @@ const App = () => {
           )}
         </>
       ) : (
-        <button onClick={loginWithGitHub}>Login With GitHub</button>
+        <button onClick={() => login("github")}>Login With GitHub</button>
       )}
 
-      
       {jiraAccessToken ? (
         <>
           <h3>Jira Logged in</h3>
         </>
       ) : (
-        <button>Login With Jira</button>
+        <button onClick={() => login("jira")}>Login With Jira</button>
       )}
     </div>
   );
