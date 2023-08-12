@@ -41,6 +41,8 @@ const storeData = async (
     const tx = db.transaction(storeName, "readwrite");
     const store = tx.objectStore(storeName);
 
+    await store.clear();
+
     for (const obj of data) {
       await store.put(obj);
     }
@@ -159,31 +161,12 @@ export const getAccessTokenFromIndexedDB = async (
 };
 
 const updateDataInBackground = async () => {
-  // Check if there's an access token for GitHub in IndexedDB
   const githubAccessToken = await getAccessTokenFromIndexedDB(
     Databases.GITHUB_ACCESS_TOKEN
   );
 
   if (githubAccessToken) {
-    getData(Integrations.GITHUB, Entities.REPOS, githubAccessToken).then(
-      (data) => {
-        storeData(
-          Databases.GITHUB_REPOS,
-          ObjectStores.REPOS_STORE,
-          data as Repo[]
-        );
-      }
-    );
-
-    getData(Integrations.GITHUB, "followers", githubAccessToken).then(
-      (data) => {
-        storeData(
-          Databases.GITHUB_FOLLOWERS,
-          ObjectStores.FOLLOWERS_STORE,
-          data as Follower[]
-        );
-      }
-    );
+    getGithubData(githubAccessToken);
   }
 
   const jiraAccessToken = await getAccessTokenFromIndexedDB(
@@ -191,26 +174,40 @@ const updateDataInBackground = async () => {
   );
 
   if (jiraAccessToken) {
-    getData(Integrations.JIRA, Entities.PROJECT, jiraAccessToken).then(
-      (data) => {
-        storeData(
-          Databases.JIRA_PROJECTS,
-          ObjectStores.PROJECTS_STORE,
-          data as Project[]
-        );
-      }
-    );
-
-    getData(Integrations.JIRA, Entities.DASHBOARD, jiraAccessToken).then(
-      (data) => {
-        storeData(
-          Databases.JIRA_DASHBOARDS,
-          ObjectStores.DASHBOARDS_STORE,
-          (data as DashboardData).dashboards
-        );
-      }
-    );
+    getJiraData(jiraAccessToken);
   }
+};
+
+const getJiraData = (jiraAT: string) => {
+  getData(Integrations.JIRA, Entities.PROJECT, jiraAT).then((data) => {
+    storeData(
+      Databases.JIRA_PROJECTS,
+      ObjectStores.PROJECTS_STORE,
+      data as Project[]
+    );
+  });
+
+  getData(Integrations.JIRA, Entities.DASHBOARD, jiraAT).then((data) => {
+    storeData(
+      Databases.JIRA_DASHBOARDS,
+      ObjectStores.DASHBOARDS_STORE,
+      (data as DashboardData).dashboards
+    );
+  });
+};
+
+const getGithubData = (githubAT: string) => {
+  getData(Integrations.GITHUB, Entities.REPOS, githubAT).then((data) => {
+    storeData(Databases.GITHUB_REPOS, ObjectStores.REPOS_STORE, data as Repo[]);
+  });
+
+  getData(Integrations.GITHUB, "followers", githubAT).then((data) => {
+    storeData(
+      Databases.GITHUB_FOLLOWERS,
+      ObjectStores.FOLLOWERS_STORE,
+      data as Follower[]
+    );
+  });
 };
 
 updateDataInBackground();
@@ -226,26 +223,7 @@ chrome.webNavigation.onCompleted.addListener(({ url }) => {
         .then((jiraAccessToken) => {
           if (jiraAccessToken) {
             storeAccessToken(Databases.JIRA_ACCESS_TOKEN, jiraAccessToken);
-            getData(Integrations.JIRA, Entities.PROJECT, jiraAccessToken).then(
-              (data) => {
-                storeData(
-                  Databases.JIRA_PROJECTS,
-                  ObjectStores.PROJECTS_STORE,
-                  data as Project[]
-                );
-              }
-            );
-            getData(
-              Integrations.JIRA,
-              Entities.DASHBOARD,
-              jiraAccessToken
-            ).then((data) => {
-              storeData(
-                Databases.JIRA_DASHBOARDS,
-                ObjectStores.DASHBOARDS_STORE,
-                (data as DashboardData).dashboards
-              );
-            });
+            getJiraData(jiraAccessToken);
           }
         })
         .catch((error) => {
@@ -256,26 +234,7 @@ chrome.webNavigation.onCompleted.addListener(({ url }) => {
         .then((githubAccessToken) => {
           if (githubAccessToken) {
             storeAccessToken(Databases.GITHUB_ACCESS_TOKEN, githubAccessToken);
-            getData(
-              Integrations.GITHUB,
-              Entities.REPOS,
-              githubAccessToken
-            ).then((data) => {
-              storeData(
-                Databases.GITHUB_REPOS,
-                ObjectStores.REPOS_STORE,
-                data as Repo[]
-              );
-            });
-            getData(Integrations.GITHUB, "followers", githubAccessToken).then(
-              (data) => {
-                storeData(
-                  Databases.GITHUB_FOLLOWERS,
-                  ObjectStores.FOLLOWERS_STORE,
-                  data as Follower[]
-                );
-              }
-            );
+            getGithubData(githubAccessToken);
           }
         })
         .catch((error) => {
