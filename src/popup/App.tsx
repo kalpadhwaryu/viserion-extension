@@ -1,6 +1,13 @@
 import { IDBPCursorWithValue, openDB } from "idb";
 import React, { useState, useEffect, SetStateAction } from "react";
-import { DataFromAPI, Follower, Project, Repo } from "../model";
+import {
+  Dashboard,
+  DashboardData,
+  DataFromAPI,
+  Follower,
+  Project,
+  Repo,
+} from "../model";
 import { getData } from "../background/background";
 import { Databases, Entities, Integrations, ObjectStores } from "../enums";
 
@@ -31,6 +38,11 @@ const App = () => {
 
   const [jiraAccessToken, setJiraAccessToken] = useState<string>("");
   const [projects, setProjects] = useState<Project[]>([]);
+  const [projectsFromAPI, setProjectsFromAPI] = useState<Project[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState<boolean>(false);
+  const [dashboards, setDashboards] = useState<Dashboard[]>([]);
+  const [dashboardsFromAPI, setDashboardsFromAPI] = useState<Dashboard[]>([]);
+  const [dashboardsLoading, setDashboardsLoading] = useState<boolean>(false);
 
   const fetchDataFromIndexedDB = async (
     databaseName: string,
@@ -235,20 +247,110 @@ const App = () => {
 
       {jiraAccessToken ? (
         <>
-          <h3 style={{ textAlign: "center" }}>Jira Logged in</h3>
-          <button
-            onClick={() => {
-              fetchDataFromIndexedDB(
-                Databases.JIRA_PROJECTS,
-                ObjectStores.PROJECTS_STORE,
-                setProjects
-              );
-            }}
+          <table
+            border={1}
+            style={{ borderStyle: "solid", alignContent: "center" }}
           >
-            Get your projects from DB
-          </button>
-          {projects.length > 0 &&
-            projects.map((project) => <h3 key={project.id}>{project.name}</h3>)}
+            <tbody>
+              <tr>
+                <td colSpan={2}>
+                  <h3 style={{ textAlign: "center" }}>Jira Logged in</h3>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <button
+                    onClick={() => {
+                      fetchDataFromIndexedDB(
+                        Databases.JIRA_PROJECTS,
+                        ObjectStores.PROJECTS_STORE,
+                        setProjects
+                      );
+                    }}
+                  >
+                    Get your projects from DB
+                  </button>
+                  {projects.length > 0 &&
+                    projects.map((project) => (
+                      <h3 key={project.id}>{project.name}</h3>
+                    ))}
+                </td>
+                <td>
+                  <button
+                    onClick={async () => {
+                      setProjectsLoading(true);
+                      const jiraProjects = (await getData(
+                        Integrations.JIRA,
+                        Entities.PROJECT,
+                        jiraAccessToken
+                      )) as Project[];
+                      setProjectsFromAPI(jiraProjects);
+                      setProjectsLoading(false);
+                    }}
+                  >
+                    Get your projects from API
+                  </button>
+                  {projectsLoading ? (
+                    <>Loading...</>
+                  ) : (
+                    <>
+                      {projectsFromAPI.length > 0 &&
+                        projectsFromAPI.map((projectFromApi) => (
+                          <h3 key={projectFromApi.id}>{projectFromApi.name}</h3>
+                        ))}
+                    </>
+                  )}
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <button
+                    onClick={() => {
+                      fetchDataFromIndexedDB(
+                        Databases.JIRA_DASHBOARDS,
+                        ObjectStores.DASHBOARDS_STORE,
+                        setDashboards
+                      );
+                    }}
+                  >
+                    Get your dashboards from DB
+                  </button>
+                  {dashboards.length > 0 &&
+                    dashboards.map((dashboard) => (
+                      <h3 key={dashboard.id}>{dashboard.name}</h3>
+                    ))}
+                </td>
+                <td>
+                  <button
+                    onClick={async () => {
+                      setDashboardsLoading(true);
+                      const jiraDashboards = (await getData(
+                        Integrations.JIRA,
+                        Entities.DASHBOARD,
+                        jiraAccessToken
+                      )) as DashboardData;
+                      setDashboardsFromAPI(jiraDashboards.dashboards);
+                      setDashboardsLoading(false);
+                    }}
+                  >
+                    Get your dashboards from API
+                  </button>
+                  {dashboardsLoading ? (
+                    <>Loading...</>
+                  ) : (
+                    <>
+                      {dashboardsFromAPI.length > 0 &&
+                        dashboardsFromAPI.map((dashboardFromAPI) => (
+                          <h3 key={dashboardFromAPI.id}>
+                            {dashboardFromAPI.name}
+                          </h3>
+                        ))}
+                    </>
+                  )}
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </>
       ) : (
         <button onClick={() => login(Integrations.JIRA)}>
