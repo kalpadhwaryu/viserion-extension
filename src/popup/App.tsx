@@ -138,7 +138,11 @@ const App = () => {
         <>
           <table
             border={1}
-            style={{ borderStyle: "solid", alignContent: "center" }}
+            style={{
+              borderStyle: "solid",
+              alignContent: "center",
+              marginBottom: 20,
+            }}
           >
             <tbody>
               <tr>
@@ -240,16 +244,31 @@ const App = () => {
           </table>
         </>
       ) : (
-        <button onClick={() => login(Integrations.GITHUB)}>
-          Login With GitHub
-        </button>
+        <div
+          style={{
+            marginBottom: 20,
+            justifyContent: "center",
+            display: "flex",
+          }}
+        >
+          <button
+            onClick={() => login(Integrations.GITHUB)}
+            style={{ alignSelf: "center" }}
+          >
+            Login With GitHub
+          </button>
+        </div>
       )}
 
       {jiraAccessToken ? (
         <>
           <table
             border={1}
-            style={{ borderStyle: "solid", alignContent: "center" }}
+            style={{
+              borderStyle: "solid",
+              alignContent: "center",
+              marginTop: 20,
+            }}
           >
             <tbody>
               <tr>
@@ -353,9 +372,17 @@ const App = () => {
           </table>
         </>
       ) : (
-        <button onClick={() => login(Integrations.JIRA)}>
-          Login With Jira
-        </button>
+        <div
+          style={{
+            marginTop: 20,
+            justifyContent: "center",
+            display: "flex",
+          }}
+        >
+          <button onClick={() => login(Integrations.JIRA)}>
+            Login With Jira
+          </button>
+        </div>
       )}
     </div>
   );
