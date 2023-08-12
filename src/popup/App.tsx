@@ -1,4 +1,4 @@
-import { IDBPCursorWithValue, openDB } from "idb";
+import { IDBPCursorWithValue } from "idb";
 import React, { useState, useEffect, SetStateAction } from "react";
 import {
   Dashboard,
@@ -75,12 +75,8 @@ const App = () => {
                 setState(data);
               }
             };
-          } else {
-            console.log(`${storeName} object store not found.`);
           }
         };
-      } else {
-        console.log(`${databaseName} database not found.`);
       }
     } catch (error) {
       console.error("Error fetching data from IndexedDB:", error);

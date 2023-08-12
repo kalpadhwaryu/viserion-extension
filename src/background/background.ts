@@ -149,14 +149,8 @@ export const getAccessTokenFromIndexedDB = async (
           } else {
             return storedAccessToken;
           }
-        } else {
-          console.log("Access token not found in IndexedDB.");
         }
-      } else {
-        console.log("AccessTokenStore object store not found.");
       }
-    } else {
-      console.log(`${databaseName} database not found.`);
     }
   } catch (error) {
     console.error("Error retrieving access token:", error);
