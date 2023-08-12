@@ -139,7 +139,8 @@ const App = () => {
           <table
             border={1}
             style={{
-              borderStyle: "solid",
+              borderCollapse: "collapse",
+              border: "1px solid black",
               alignContent: "center",
               marginBottom: 20,
             }}
@@ -151,7 +152,7 @@ const App = () => {
                 </td>
               </tr>
               <tr>
-                <td>
+                <td style={{ padding: 10 }}>
                   <button
                     onClick={() => {
                       fetchDataFromIndexedDB(
@@ -166,7 +167,7 @@ const App = () => {
                   {repos.length > 0 &&
                     repos.map((repo) => <h3 key={repo.id}>{repo.name}</h3>)}
                 </td>
-                <td>
+                <td style={{ padding: 10 }}>
                   <button
                     onClick={async () => {
                       setReposLoading(true);
@@ -194,7 +195,7 @@ const App = () => {
                 </td>
               </tr>
               <tr>
-                <td>
+                <td style={{ padding: 10 }}>
                   <button
                     onClick={() => {
                       fetchDataFromIndexedDB(
@@ -211,7 +212,7 @@ const App = () => {
                       <h3 key={follower.id}>{follower.login}</h3>
                     ))}
                 </td>
-                <td>
+                <td style={{ padding: 10 }}>
                   <button
                     onClick={async () => {
                       setFollowersLoading(true);
@@ -259,13 +260,13 @@ const App = () => {
           </button>
         </div>
       )}
-
       {jiraAccessToken ? (
         <>
           <table
             border={1}
             style={{
-              borderStyle: "solid",
+              borderCollapse: "collapse",
+              border: "1px solid black",
               alignContent: "center",
               marginTop: 20,
             }}
@@ -277,7 +278,7 @@ const App = () => {
                 </td>
               </tr>
               <tr>
-                <td>
+                <td style={{ padding: 10 }}>
                   <button
                     onClick={() => {
                       fetchDataFromIndexedDB(
@@ -294,7 +295,7 @@ const App = () => {
                       <h3 key={project.id}>{project.name}</h3>
                     ))}
                 </td>
-                <td>
+                <td style={{ padding: 10 }}>
                   <button
                     onClick={async () => {
                       setProjectsLoading(true);
@@ -322,7 +323,7 @@ const App = () => {
                 </td>
               </tr>
               <tr>
-                <td>
+                <td style={{ padding: 10 }}>
                   <button
                     onClick={() => {
                       fetchDataFromIndexedDB(
@@ -339,7 +340,7 @@ const App = () => {
                       <h3 key={dashboard.id}>{dashboard.name}</h3>
                     ))}
                 </td>
-                <td>
+                <td style={{ padding: 10 }}>
                   <button
                     onClick={async () => {
                       setDashboardsLoading(true);
