@@ -23,6 +23,7 @@ module.exports = {
     new CopyPlugin({
       patterns: [
         { from: path.resolve("src/manifest.json"), to: path.resolve("dist") },
+        { from: path.resolve("src/icon.png"), to: path.resolve("dist") },
       ],
     }),
     new HtmlPlugin({
