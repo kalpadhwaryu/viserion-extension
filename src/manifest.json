@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Viserion",
-  "description": "chrome extension",
+  "description": "Gets your Github and Jira data using OAuth",
   "version": "1.0.0",
   "action": {
     "default_popup": "popup.html",
