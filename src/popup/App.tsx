@@ -164,8 +164,11 @@ const App = () => {
                   >
                     Get your repos from DB
                   </button>
-                  {repos.length > 0 &&
-                    repos.map((repo) => <h3 key={repo.id}>{repo.name}</h3>)}
+                  {repos.length !== 0 ? (
+                    repos.map((repo) => <h3 key={repo.id}>{repo.name}</h3>)
+                  ) : (
+                    <>No repos</>
+                  )}
                 </td>
                 <td style={{ padding: 10 }}>
                   <button
@@ -186,10 +189,13 @@ const App = () => {
                     <>Loading...</>
                   ) : (
                     <>
-                      {reposFromAPI.length > 0 &&
+                      {reposFromAPI.length !== 0 ? (
                         reposFromAPI.map((repoFromApi) => (
                           <h3 key={repoFromApi.id}>{repoFromApi.name}</h3>
-                        ))}
+                        ))
+                      ) : (
+                        <>No repos</>
+                      )}
                     </>
                   )}
                 </td>
@@ -207,10 +213,13 @@ const App = () => {
                   >
                     Get your followers from DB
                   </button>
-                  {followers.length > 0 &&
+                  {followers.length !== 0 ? (
                     followers.map((follower) => (
                       <h3 key={follower.id}>{follower.login}</h3>
-                    ))}
+                    ))
+                  ) : (
+                    <>No followers</>
+                  )}
                 </td>
                 <td style={{ padding: 10 }}>
                   <button
@@ -231,12 +240,15 @@ const App = () => {
                     <>Loading...</>
                   ) : (
                     <>
-                      {followersFromAPI.length > 0 &&
+                      {followersFromAPI.length !== 0 ? (
                         followersFromAPI.map((followerFromApi) => (
                           <h3 key={followerFromApi.id}>
                             {followerFromApi.login}
                           </h3>
-                        ))}
+                        ))
+                      ) : (
+                        <>No followers</>
+                      )}
                     </>
                   )}
                 </td>
@@ -290,10 +302,13 @@ const App = () => {
                   >
                     Get your projects from DB
                   </button>
-                  {projects.length > 0 &&
+                  {projects.length !== 0 ? (
                     projects.map((project) => (
                       <h3 key={project.id}>{project.name}</h3>
-                    ))}
+                    ))
+                  ) : (
+                    <>No projects</>
+                  )}
                 </td>
                 <td style={{ padding: 10 }}>
                   <button
@@ -314,10 +329,13 @@ const App = () => {
                     <>Loading...</>
                   ) : (
                     <>
-                      {projectsFromAPI.length > 0 &&
+                      {projectsFromAPI.length !== 0 ? (
                         projectsFromAPI.map((projectFromApi) => (
                           <h3 key={projectFromApi.id}>{projectFromApi.name}</h3>
-                        ))}
+                        ))
+                      ) : (
+                        <>No projects</>
+                      )}
                     </>
                   )}
                 </td>
@@ -335,10 +353,13 @@ const App = () => {
                   >
                     Get your dashboards from DB
                   </button>
-                  {dashboards.length > 0 &&
+                  {dashboards.length !== 0 ? (
                     dashboards.map((dashboard) => (
                       <h3 key={dashboard.id}>{dashboard.name}</h3>
-                    ))}
+                    ))
+                  ) : (
+                    <>No dashboards</>
+                  )}
                 </td>
                 <td style={{ padding: 10 }}>
                   <button
@@ -359,12 +380,15 @@ const App = () => {
                     <>Loading...</>
                   ) : (
                     <>
-                      {dashboardsFromAPI.length > 0 &&
+                      {dashboardsFromAPI.length !== 0 ? (
                         dashboardsFromAPI.map((dashboardFromAPI) => (
                           <h3 key={dashboardFromAPI.id}>
                             {dashboardFromAPI.name}
                           </h3>
-                        ))}
+                        ))
+                      ) : (
+                        <>No dashboards</>
+                      )}
                     </>
                   )}
                 </td>
