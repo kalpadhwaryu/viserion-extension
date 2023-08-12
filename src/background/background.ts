@@ -3,7 +3,10 @@ import { DashboardData, DataFromAPI, Follower, Project, Repo } from "../model";
 import { Databases, Entities, Integrations, ObjectStores } from "../enums";
 import { SetStateAction } from "react";
 
-const storeAccessToken = async (databaseName: string, accessToken: string) => {
+const storeAccessToken = async (
+  databaseName: string,
+  accessToken: string
+): Promise<void> => {
   try {
     const db = await openDB(databaseName, 1, {
       upgrade(db) {
@@ -18,7 +21,7 @@ const storeAccessToken = async (databaseName: string, accessToken: string) => {
     await store.put(accessToken, "access_token");
 
     await tx.done;
-    console.log("Access token stored in IndexDB.");
+    console.log(`Access token stored in ${databaseName}`);
   } catch (error) {
     console.error("Error storing access token:", error);
   }
@@ -28,7 +31,7 @@ const storeData = async (
   databaseName: string,
   storeName: string,
   data: DataFromAPI
-) => {
+): Promise<void> => {
   try {
     const db = await openDB(databaseName, 1, {
       upgrade(db) {
@@ -48,9 +51,9 @@ const storeData = async (
     }
 
     await tx.done;
-    console.log(`${storeName} stored in IndexedDB.`);
+    console.log(`Data stored in ${storeName}`);
   } catch (error) {
-    console.error(`Error storing ${storeName} in IndexedDB:`, error);
+    console.error(`Error storing data in ${storeName}`, error);
   }
 };
 
@@ -71,7 +74,7 @@ const getGitHubAccessToken = async (
     const data = await response.json();
     return data.access_token;
   } catch (error) {
-    console.error("Error getting access token:", error);
+    console.error("Error getting Github access token:", error);
     return null;
   }
 };
@@ -95,7 +98,7 @@ const getJiraAccessToken = async (
     const data = await response.json();
     return data.access_token;
   } catch (error) {
-    console.error("Error getting access token:", error);
+    console.error("Error getting Jira access token:", error);
     return null;
   }
 };
@@ -128,7 +131,7 @@ export const getData = async (
 export const getAccessTokenFromIndexedDB = async (
   databaseName: string,
   setState?: (data: SetStateAction<string>) => void
-) => {
+): Promise<string> => {
   const dbNames = await indexedDB.databases();
   try {
     const dbExists = dbNames.some((db) => db.name === databaseName);
@@ -160,7 +163,7 @@ export const getAccessTokenFromIndexedDB = async (
   }
 };
 
-const updateDataInBackground = async () => {
+const updateDataInBackground = async (): Promise<void> => {
   const githubAccessToken = await getAccessTokenFromIndexedDB(
     Databases.GITHUB_ACCESS_TOKEN
   );
@@ -201,7 +204,7 @@ const getGithubData = (githubAT: string) => {
     storeData(Databases.GITHUB_REPOS, ObjectStores.REPOS_STORE, data as Repo[]);
   });
 
-  getData(Integrations.GITHUB, "followers", githubAT).then((data) => {
+  getData(Integrations.GITHUB, Entities.FOLLOWERS, githubAT).then((data) => {
     storeData(
       Databases.GITHUB_FOLLOWERS,
       ObjectStores.FOLLOWERS_STORE,
