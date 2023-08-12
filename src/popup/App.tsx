@@ -8,7 +8,7 @@ import {
   Project,
   Repo,
 } from "../model";
-import { getData } from "../background/background";
+import { getAccessTokenFromIndexedDB, getData } from "../background/background";
 import { Databases, Entities, Integrations, ObjectStores } from "../enums";
 
 const login = (integration: string) => {
@@ -84,40 +84,6 @@ const App = () => {
       }
     } catch (error) {
       console.error("Error fetching data from IndexedDB:", error);
-    }
-  };
-
-  const getAccessTokenFromIndexedDB = async (
-    databaseName: string,
-    setState: (data: SetStateAction<string>) => void
-  ) => {
-    const dbNames = await indexedDB.databases();
-    try {
-      const dbExists = dbNames.some((db) => db.name === databaseName);
-
-      if (dbExists) {
-        const db = await openDB(databaseName, 1);
-        if (db.objectStoreNames.contains(ObjectStores.ACCESS_TOKEN_STORE)) {
-          const tx = db.transaction(
-            ObjectStores.ACCESS_TOKEN_STORE,
-            "readonly"
-          );
-          const store = tx.objectStore(ObjectStores.ACCESS_TOKEN_STORE);
-          const storedAccessToken: string = await store.get("access_token");
-
-          if (storedAccessToken) {
-            setState(storedAccessToken);
-          } else {
-            console.log("Access token not found in IndexedDB.");
-          }
-        } else {
-          console.log("AccessTokenStore object store not found.");
-        }
-      } else {
-        console.log(`${databaseName} database not found.`);
-      }
-    } catch (error) {
-      console.error("Error retrieving access token:", error);
     }
   };
 

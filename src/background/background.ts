@@ -1,6 +1,7 @@
 import { openDB } from "idb";
 import { DashboardData, DataFromAPI, Follower, Project, Repo } from "../model";
 import { Databases, Entities, Integrations, ObjectStores } from "../enums";
+import { SetStateAction } from "react";
 
 const storeAccessToken = async (databaseName: string, accessToken: string) => {
   try {
@@ -121,6 +122,98 @@ export const getData = async (
     return null;
   }
 };
+
+export const getAccessTokenFromIndexedDB = async (
+  databaseName: string,
+  setState?: (data: SetStateAction<string>) => void
+) => {
+  const dbNames = await indexedDB.databases();
+  try {
+    const dbExists = dbNames.some((db) => db.name === databaseName);
+
+    if (dbExists) {
+      const db = await openDB(databaseName, 1);
+      if (db.objectStoreNames.contains(ObjectStores.ACCESS_TOKEN_STORE)) {
+        const tx = db.transaction(ObjectStores.ACCESS_TOKEN_STORE, "readonly");
+        const store = tx.objectStore(ObjectStores.ACCESS_TOKEN_STORE);
+        const storedAccessToken: string = await store.get("access_token");
+
+        if (storedAccessToken) {
+          if (setState) {
+            setState(storedAccessToken);
+          } else {
+            return storedAccessToken;
+          }
+        } else {
+          console.log("Access token not found in IndexedDB.");
+        }
+      } else {
+        console.log("AccessTokenStore object store not found.");
+      }
+    } else {
+      console.log(`${databaseName} database not found.`);
+    }
+  } catch (error) {
+    console.error("Error retrieving access token:", error);
+  }
+};
+
+const updateDataInBackground = async () => {
+  // Check if there's an access token for GitHub in IndexedDB
+  const githubAccessToken = await getAccessTokenFromIndexedDB(
+    Databases.GITHUB_ACCESS_TOKEN
+  );
+
+  if (githubAccessToken) {
+    getData(Integrations.GITHUB, Entities.REPOS, githubAccessToken).then(
+      (data) => {
+        storeData(
+          Databases.GITHUB_REPOS,
+          ObjectStores.REPOS_STORE,
+          data as Repo[]
+        );
+      }
+    );
+
+    getData(Integrations.GITHUB, "followers", githubAccessToken).then(
+      (data) => {
+        storeData(
+          Databases.GITHUB_FOLLOWERS,
+          ObjectStores.FOLLOWERS_STORE,
+          data as Follower[]
+        );
+      }
+    );
+  }
+
+  const jiraAccessToken = await getAccessTokenFromIndexedDB(
+    Databases.JIRA_ACCESS_TOKEN
+  );
+
+  if (jiraAccessToken) {
+    getData(Integrations.JIRA, Entities.PROJECT, jiraAccessToken).then(
+      (data) => {
+        storeData(
+          Databases.JIRA_PROJECTS,
+          ObjectStores.PROJECTS_STORE,
+          data as Project[]
+        );
+      }
+    );
+
+    getData(Integrations.JIRA, Entities.DASHBOARD, jiraAccessToken).then(
+      (data) => {
+        storeData(
+          Databases.JIRA_DASHBOARDS,
+          ObjectStores.DASHBOARDS_STORE,
+          (data as DashboardData).dashboards
+        );
+      }
+    );
+  }
+};
+
+updateDataInBackground();
 
 chrome.webNavigation.onCompleted.addListener(({ url }) => {
   if (url.startsWith("http://localhost:8080")) {
